@@ -61,7 +61,11 @@ function currentTime(date: Date) {
 }
 
 function cleanDescription(value: string) {
-  return value.trim().replace(/^(แล้วก็|และ|,)+\s*/i, '').trim()
+  return value
+    .trim()
+    .replace(/^(แล้วก็|และ|,)+\s*/i, '')
+    .replace(/[฿$]\s*$/, '')
+    .trim()
 }
 
 function categoryFor(description: string) {
@@ -155,14 +159,16 @@ export function parseExpenseMessage(message: string, options: ParseOptions = {})
   const transactionText = temporal.matchedText
     ? normalizedMessage.replace(temporal.matchedText, ' ')
     : normalizedMessage
-  const matches = [...transactionText.matchAll(/([^\d]+?)\s*(\d+(?:\.\d+)?)/g)]
+  const matches = [...transactionText.matchAll(
+    /([^\d]+?)(?:฿\s*)?(\d+(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:บาท|บ\.)?/g,
+  )]
 
   return matches
     .map((match, index) => transactionSchema.parse({
       id: `${Date.now()}-${index}`,
       description: cleanDescription(match[1]),
       category: categoryFor(match[1]),
-      amount: Number(match[2]),
+      amount: Number(match[2].replace(/,/g, '')),
       date: temporal.date,
       time: temporal.time,
       timeSource: temporal.timeSource,

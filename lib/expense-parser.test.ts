@@ -56,4 +56,19 @@ describe('parseExpenseMessage', () => {
       { description: 'ข้าวมันไก่', amount: 50 },
     ])
   })
+
+  it('รองรับรูปแบบจำนวนเงินที่เขียนต่างกัน', () => {
+    expect(parseExpenseMessage('ข้าวมันไก่ 10บาท', { now })).toMatchObject([
+      { description: 'ข้าวมันไก่', amount: 10 },
+    ])
+    expect(parseExpenseMessage('น้ำเปล่า 10 บาท', { now })).toMatchObject([
+      { description: 'น้ำเปล่า', amount: 10 },
+    ])
+    expect(parseExpenseMessage('กาแฟ ฿10.50', { now })).toMatchObject([
+      { description: 'กาแฟ', amount: 10.5 },
+    ])
+    expect(parseExpenseMessage('ของใช้ 1,000 บาท', { now })).toMatchObject([
+      { description: 'ของใช้', amount: 1000 },
+    ])
+  })
 })
