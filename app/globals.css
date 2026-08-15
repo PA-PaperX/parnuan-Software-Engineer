@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Arial, "Noto Sans Thai", Tahoma, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #e9e9e9;
+  color: #111111;
+  font-family: Arial, "Noto Sans Thai", Tahoma, sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
