@@ -85,6 +85,8 @@ export default function ReceiptPage() {
   }
 
   function startEditing(transaction: Transaction) {
+    if (status === 'confirmed') return
+
     setEditingId(transaction.id)
     setEditDraft({
       description: transaction.description,
@@ -127,6 +129,8 @@ export default function ReceiptPage() {
   }
 
   function deleteTransaction(id: string) {
+    if (status === 'confirmed') return
+
     setTransactions((current) => current.filter((transaction) => transaction.id !== id))
     setEditingId(null)
     setNotice('ลบรายการแล้ว')
@@ -140,7 +144,7 @@ export default function ReceiptPage() {
   }
 
   function confirmTransactions() {
-    if (transactions.length === 0) return
+    if (transactions.length === 0 || status === 'confirmed') return
     setStatus('confirmed')
     setNotice('ยืนยันรายการแล้ว')
   }
@@ -247,10 +251,14 @@ export default function ReceiptPage() {
                     {transaction.warnings.map((warning) => (
                       <p className="mb-2 max-w-[360px] text-[11px] text-neutral-600" key={warning}>เตือน: {warning}</p>
                     ))}
-                    <div className="flex gap-2">
-                      <button className="border border-neutral-300 px-2 py-1 text-[11px] text-neutral-600 hover:bg-neutral-100" type="button" onClick={() => startEditing(transaction)}>แก้ไข</button>
-                      <button className="border border-neutral-300 px-2 py-1 text-[11px] text-neutral-600 hover:bg-neutral-100" type="button" onClick={() => deleteTransaction(transaction.id)}>ลบ</button>
-                    </div>
+                    {status === 'confirmed' ? (
+                      <p className="text-[11px] text-neutral-500">รายการนี้ยืนยันแล้ว</p>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button className="border border-neutral-300 px-2 py-1 text-[11px] text-neutral-600 hover:bg-neutral-100" type="button" onClick={() => startEditing(transaction)}>แก้ไข</button>
+                        <button className="border border-neutral-300 px-2 py-1 text-[11px] text-neutral-600 hover:bg-neutral-100" type="button" onClick={() => deleteTransaction(transaction.id)}>ลบ</button>
+                      </div>
+                    )}
                   </div>
                   <span className="shrink-0 text-[17px] font-bold tabular-nums">{formatAmount(transaction.amount)}</span>
                 </>
@@ -265,8 +273,8 @@ export default function ReceiptPage() {
         </div>
 
         <div className="mt-7 flex flex-col gap-2 sm:flex-row">
-          <button className="flex-1 border border-neutral-950 bg-white px-4 py-2.5 text-[13px] font-bold hover:bg-neutral-100" type="button" onClick={clearTransactions}>ล้างรายการ</button>
-          <button className="flex-1 border border-neutral-950 bg-neutral-950 px-4 py-2.5 text-[13px] font-bold text-white hover:bg-neutral-800" type="button" onClick={confirmTransactions}>ยืนยันรายการ</button>
+          <button className="flex-1 border border-neutral-950 bg-white px-4 py-2.5 text-[13px] font-bold hover:bg-neutral-100" type="button" onClick={clearTransactions}>{status === 'confirmed' ? 'เริ่มรายการใหม่' : 'ล้างรายการ'}</button>
+          <button className="flex-1 border border-neutral-950 bg-neutral-950 px-4 py-2.5 text-[13px] font-bold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40" type="button" onClick={confirmTransactions} disabled={transactions.length === 0 || status === 'confirmed'}>{status === 'confirmed' ? 'ยืนยันแล้ว' : 'ยืนยันรายการ'}</button>
         </div>
 
         <footer className="mt-8 flex justify-between gap-4 border-t border-dotted border-neutral-300 pt-4 text-[11px] text-neutral-600">
