@@ -8,19 +8,43 @@ type EditDraft = {
   amount: string
 }
 
-const initialTransactions: Transaction[] = [
-  { id: '1', description: 'ข้าวมันไก่', category: 'อาหาร', amount: 50, time: 'วันนี้ 13:58' },
-  { id: '2', description: 'น้ำเปล่า', category: 'เครื่องดื่ม', amount: 7, time: 'วันนี้ 13:58' },
-  { id: '3', description: 'ช้อปปิ้ง', category: 'ช้อปปิ้ง', amount: 500, time: 'วันนี้ 13:58' },
-]
-
 function formatAmount(amount: number) {
   return `฿${amount.toFixed(2)}`
 }
 
+function dateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function createInitialTransactions(): Transaction[] {
+  const now = new Date()
+  const date = dateKey(now)
+  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  const base = { date, time, timeSource: 'message' as const, warnings: [] as string[] }
+
+  return [
+    { ...base, id: '1', description: 'ข้าวมันไก่', category: 'อาหาร', amount: 50, sourceText: 'ข้าวมันไก่ 50' },
+    { ...base, id: '2', description: 'น้ำเปล่า', category: 'เครื่องดื่ม', amount: 7, sourceText: 'น้ำเปล่า 7' },
+    { ...base, id: '3', description: 'ช้อปปิ้ง', category: 'ช้อปปิ้ง', amount: 500, sourceText: 'ช้อปปิ้ง 500' },
+  ]
+}
+
+function formatDateLabel(date: string | null) {
+  if (!date) return 'ไม่ระบุวันที่'
+
+  const today = new Date()
+  if (date === dateKey(today)) return 'วันนี้'
+
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (date === dateKey(yesterday)) return 'เมื่อวาน'
+
+  return date
+}
+
 export default function ReceiptPage() {
   const [message, setMessage] = useState('')
-  const [transactions, setTransactions] = useState(initialTransactions)
+  const [transactions, setTransactions] = useState<Transaction[]>(createInitialTransactions)
   const [status, setStatus] = useState<'draft' | 'confirmed'>('draft')
   const [notice, setNotice] = useState('ข้อมูลยังไม่ถูกบันทึก')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -150,7 +174,10 @@ export default function ReceiptPage() {
                 <>
                   <div>
                     <h2 className="mb-1 text-base font-bold">{transaction.description}</h2>
-                    <p className="mb-2 text-xs text-neutral-600">{transaction.category} · {transaction.time}</p>
+                    <p className="mb-2 text-xs text-neutral-600">{transaction.category} · {formatDateLabel(transaction.date)} {transaction.time ?? 'เวลาไม่ระบุ'}</p>
+                    {transaction.warnings.map((warning) => (
+                      <p className="mb-2 max-w-[360px] text-[11px] text-neutral-600" key={warning}>เตือน: {warning}</p>
+                    ))}
                     <div className="flex gap-2">
                       <button className="border border-neutral-300 px-2 py-1 text-[11px] text-neutral-600 hover:bg-neutral-100" type="button" onClick={() => startEditing(transaction)}>แก้ไข</button>
                       <button className="border border-neutral-300 px-2 py-1 text-[11px] text-neutral-600 hover:bg-neutral-100" type="button" onClick={() => deleteTransaction(transaction.id)}>ลบ</button>
