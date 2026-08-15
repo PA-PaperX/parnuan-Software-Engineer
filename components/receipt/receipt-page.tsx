@@ -6,7 +6,12 @@ import { parseExpenseMessage, type Transaction } from '@/lib/expense-parser'
 type EditDraft = {
   description: string
   amount: string
+  category: string
+  date: string
+  time: string
 }
+
+const categoryOptions = ['อาหาร', 'เครื่องดื่ม', 'เดินทาง', 'ช้อปปิ้ง', 'สุขภาพ', 'บิลและสาธารณูปโภค', 'อื่น ๆ']
 
 function formatAmount(amount: number) {
   return `฿${amount.toFixed(2)}`
@@ -42,13 +47,23 @@ function formatDateLabel(date: string | null) {
   return date
 }
 
+function normalizeManualTime(value: string) {
+  const match = value.trim().match(/^(\d{1,2}):([0-5]\d)$/)
+  if (!match) return null
+
+  const hour = Number(match[1])
+  if (hour > 23) return null
+
+  return `${String(hour).padStart(2, '0')}:${match[2]}`
+}
+
 export default function ReceiptPage() {
   const [message, setMessage] = useState('')
   const [transactions, setTransactions] = useState<Transaction[]>(createInitialTransactions)
   const [status, setStatus] = useState<'draft' | 'confirmed'>('draft')
   const [notice, setNotice] = useState('ข้อมูลยังไม่ถูกบันทึก')
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editDraft, setEditDraft] = useState<EditDraft>({ description: '', amount: '' })
+  const [editDraft, setEditDraft] = useState<EditDraft>({ description: '', amount: '', category: '', date: '', time: '' })
 
   const total = useMemo(
     () => transactions.reduce((sum, transaction) => sum + transaction.amount, 0),
@@ -71,16 +86,40 @@ export default function ReceiptPage() {
 
   function startEditing(transaction: Transaction) {
     setEditingId(transaction.id)
-    setEditDraft({ description: transaction.description, amount: String(transaction.amount) })
+    setEditDraft({
+      description: transaction.description,
+      amount: String(transaction.amount),
+      category: transaction.category,
+      date: transaction.date ?? '',
+      time: transaction.time ?? '',
+    })
   }
 
   function saveEditing() {
     const amount = Number(editDraft.amount)
     if (!editDraft.description.trim() || !Number.isFinite(amount) || amount < 0) return
 
+    const time = editDraft.time.trim()
+    const normalizedTime = time ? normalizeManualTime(time) : null
+    if (time && !normalizedTime) {
+      setNotice('กรุณาใส่เวลาเป็นรูปแบบ ชั่วโมง:นาที เช่น 12:00')
+      return
+    }
+
     setTransactions((current) => current.map((transaction) => (
       transaction.id === editingId
-        ? { ...transaction, description: editDraft.description.trim(), amount }
+        ? {
+            ...transaction,
+            description: editDraft.description.trim(),
+            amount,
+            category: editDraft.category,
+            date: editDraft.date || null,
+            time: normalizedTime,
+            timeSource: normalizedTime ? 'message' : transaction.timeSource,
+            warnings: normalizedTime
+              ? transaction.warnings.filter((warning) => !warning.includes('เวลา'))
+              : transaction.warnings,
+          }
         : transaction
     )))
     setEditingId(null)
@@ -145,8 +184,8 @@ export default function ReceiptPage() {
           ) : transactions.map((transaction) => (
             <article className="flex items-start justify-between gap-4 border-t border-neutral-300 py-4" key={transaction.id}>
               {editingId === transaction.id ? (
-                <div className="grid w-full gap-3 sm:grid-cols-[1fr_140px]">
-                  <label className="text-[13px] font-bold">
+                <div className="grid w-full gap-3 sm:grid-cols-2">
+                  <label className="text-[13px] font-bold sm:col-span-2">
                     รายละเอียด
                     <input
                       className="mt-1.5 block w-full rounded-none border border-neutral-950 bg-neutral-50 px-2.5 py-2 font-normal outline-none focus:ring-2 focus:ring-neutral-400"
@@ -163,6 +202,36 @@ export default function ReceiptPage() {
                       step="0.01"
                       value={editDraft.amount}
                       onChange={(event) => setEditDraft({ ...editDraft, amount: event.target.value })}
+                    />
+                  </label>
+                  <label className="text-[13px] font-bold">
+                    หมวดหมู่
+                    <select
+                      className="mt-1.5 block w-full rounded-none border border-neutral-950 bg-neutral-50 px-2.5 py-2 font-normal outline-none focus:ring-2 focus:ring-neutral-400"
+                      value={editDraft.category}
+                      onChange={(event) => setEditDraft({ ...editDraft, category: event.target.value })}
+                    >
+                      {categoryOptions.map((category) => <option key={category}>{category}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-[13px] font-bold">
+                    วันที่
+                    <input
+                      className="mt-1.5 block w-full rounded-none border border-neutral-950 bg-neutral-50 px-2.5 py-2 font-normal outline-none focus:ring-2 focus:ring-neutral-400"
+                      type="date"
+                      value={editDraft.date}
+                      onChange={(event) => setEditDraft({ ...editDraft, date: event.target.value })}
+                    />
+                  </label>
+                  <label className="text-[13px] font-bold">
+                    เวลา
+                    <input
+                      className="mt-1.5 block w-full rounded-none border border-neutral-950 bg-neutral-50 px-2.5 py-2 font-normal outline-none focus:ring-2 focus:ring-neutral-400"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="เช่น 12:00"
+                      value={editDraft.time}
+                      onChange={(event) => setEditDraft({ ...editDraft, time: event.target.value })}
                     />
                   </label>
                   <div className="flex gap-2 sm:col-span-2">
