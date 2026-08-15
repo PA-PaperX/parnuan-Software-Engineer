@@ -31,6 +31,15 @@ describe('parseExpenseMessage', () => {
       .toMatchObject([{ description: 'ข้าวมันไก่', date: '2026-08-14', time: '17:30' }])
   })
 
+  it('อ่านเที่ยงและเที่ยงคืน', () => {
+    expect(parseExpenseMessage('ข้าวมันไก่ 50 เที่ยง', { now })).toMatchObject([
+      { description: 'ข้าวมันไก่', amount: 50, time: '12:00', timeSource: 'message' },
+    ])
+    expect(parseExpenseMessage('ข้าวมันไก่ 50 ตอนเที่ยงคืน', { now })).toMatchObject([
+      { description: 'ข้าวมันไก่', amount: 50, time: '00:00', timeSource: 'message' },
+    ])
+  })
+
   it('แจ้งเตือนเมื่อเวลา 6 โมงยังไม่ชัดเจน', () => {
     expect(parseExpenseMessage('6 โมง ข้าวมันไก่ 50', { now })).toMatchObject([
       {

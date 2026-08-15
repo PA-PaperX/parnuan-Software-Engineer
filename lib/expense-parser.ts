@@ -104,6 +104,17 @@ function parseTemporal(message: string, now: Date): TemporalInfo {
     }
   }
 
+  const noonTime = message.match(/(?:ตอน\s*)?(เที่ยงคืน|เที่ยง)/)
+  if (noonTime) {
+    return {
+      date,
+      time: noonTime[1] === 'เที่ยงคืน' ? '00:00' : '12:00',
+      timeSource: 'message',
+      warnings: [],
+      matchedText: noonTime[0],
+    }
+  }
+
   if (hourTime) {
     const prefix = hourTime[3]
     const hour = Number(hourTime[4])
