@@ -51,12 +51,6 @@ describe('parseExpenseMessage', () => {
     ])
   })
 
-  it('แปลงเลขไทยเป็นจำนวนเงิน', () => {
-    expect(parseExpenseMessage('ข้าวมันไก่ ๕๐', { now })).toMatchObject([
-      { description: 'ข้าวมันไก่', amount: 50 },
-    ])
-  })
-
   it('รองรับรูปแบบจำนวนเงินที่เขียนต่างกัน', () => {
     expect(parseExpenseMessage('ข้าวมันไก่ 10บาท', { now })).toMatchObject([
       { description: 'ข้าวมันไก่', amount: 10 },

@@ -26,23 +26,6 @@ type TemporalInfo = {
   matchedText: string
 }
 
-const thaiDigits: Record<string, string> = {
-  '๐': '0',
-  '๑': '1',
-  '๒': '2',
-  '๓': '3',
-  '๔': '4',
-  '๕': '5',
-  '๖': '6',
-  '๗': '7',
-  '๘': '8',
-  '๙': '9',
-}
-
-function normalizeDigits(value: string) {
-  return value.replace(/[๐-๙]/g, (digit) => thaiDigits[digit])
-}
-
 function dateKey(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -154,11 +137,10 @@ function parseTemporal(message: string, now: Date): TemporalInfo {
 
 export function parseExpenseMessage(message: string, options: ParseOptions = {}): Transaction[] {
   const now = options.now ?? new Date()
-  const normalizedMessage = normalizeDigits(message)
-  const temporal = parseTemporal(normalizedMessage, now)
+  const temporal = parseTemporal(message, now)
   const transactionText = temporal.matchedText
-    ? normalizedMessage.replace(temporal.matchedText, ' ')
-    : normalizedMessage
+    ? message.replace(temporal.matchedText, ' ')
+    : message
   const matches = [...transactionText.matchAll(
     /([^\d]+?)(?:฿\s*)?(\d+(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:บาท|บ\.)?/g,
   )]
